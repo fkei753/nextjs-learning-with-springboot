@@ -73,6 +73,81 @@ Reactでは、値が変わると再描画されます。画面を直接書き換
 
 ## このサンプルの構成
 
+## 階層ごとの責務を図で理解する
+
+stateや責務が混ざって見えるときは、次の4層で分けると整理しやすくなります。
+
+1. 表示層（Server Component）
+2. 状態管理層（Client Component）
+3. 中継API層（Route Handler）
+4. データ供給層（データ取得関数）
+
+```mermaid
+flowchart LR
+	U[ユーザー操作\nブラウザ] --> C[Client Component\nstate管理・イベント処理]
+	C --> R[Route Handler\n/api/products]
+	R --> D[データ供給層\nfetchProducts\n将来はSpring Boot API呼び出し]
+	D --> R
+	R --> C
+	C --> U
+
+	S[Server Component\n初期表示のHTML生成] --> U
+```
+
+### 各層の責務
+
+#### 1. 表示層（Server Component）
+
+- 役割: 初期表示を作る
+- 主な責務: サーバー側で初回データ取得し、HTMLを返す
+- ここでやらないこと: クリック処理、入力ごとの状態更新
+
+該当ファイル: `src/app/page.tsx`
+
+#### 2. 状態管理層（Client Component）
+
+- 役割: ユーザー操作に応じて画面を変える
+- 主な責務: 入力状態、通信状態、表示データを保持し再描画を起こす
+- ここでやらないこと: バックエンドの業務ロジック本体
+
+このサンプルで扱うstateの種類:
+
+- 入力state: `keyword`, `selectedCategory`
+- 非同期state: `isPending`, `errorMessage`
+- データstate: `products`
+
+該当ファイル: `src/components/learning-playground.tsx`
+
+#### 3. 中継API層（Route Handler）
+
+- 役割: ブラウザとバックエンドの間をつなぐ
+- 主な責務: API中継、将来のヘッダー付与、レスポンス整形
+- ここでやらないこと: UI描画
+
+該当ファイル: `src/app/api/products/route.ts`
+
+#### 4. データ供給層
+
+- 役割: データ取得責務をUIから分離する
+- 主な責務: 取得関数の提供（今はダミーデータ）
+- 将来の置き換え先: Spring Boot API呼び出し
+
+該当ファイル: `src/lib/sample-data.ts`
+
+### Spring Boot経験者向けの対応づけ
+
+- Controllerに近い層: Route Handler（中継API）
+- Serviceに近い層: Route Handler内の変換・調停処理
+- Repositoryに近い層: データ供給関数（将来は外部API/DBアクセス）
+- Viewに近い層: Server Component + Client Component
+
+### 覚え方（混乱しにくい合言葉）
+
+- 画面を組む: `page.tsx`
+- 触って変わる: `learning-playground.tsx`
+- 外部とつなぐ: `route.ts`
+- データを取る: `sample-data.ts`
+
 ### トップページ
 
 - 概念説明を表示
